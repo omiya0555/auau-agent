@@ -1,5 +1,8 @@
 .venv
+venv
+__pycache__/
 
 # 善住のCLIエージェント関係
 init
 crush*
+.crush
