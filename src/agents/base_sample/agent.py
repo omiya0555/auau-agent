@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from strands import Agent
+from strands_tools.a2a_client import A2AClientToolProvider
 #from strands_tools import calculator, http_request
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,13 @@ class PromptRequest(BaseModel):
     prompt: str
 
 # Reuse a single Agent instance per process (tools are stateless)
-agent_instance = Agent(tools=[], callback_handler=None)
+agent_urls = [
+    "http://localhost:9000",  # web_search Agent 
+]
+
+a2a_tool_provider = A2AClientToolProvider(known_agent_urls=agent_urls)
+
+agent_instance = Agent(tools=a2a_tool_provider.tools, callback_handler=None)
 
 @app.get("/health")
 async def health():
