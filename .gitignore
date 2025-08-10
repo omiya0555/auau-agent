@@ -1,1 +1,5 @@
 .venv
+
+# 善住のCLIエージェント関係
+init
+crush*
