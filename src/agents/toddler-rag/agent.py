@@ -1,19 +1,15 @@
-import asyncio
 import json
 import logging
 import os
-from typing import AsyncGenerator
 
 import boto3
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from strands import Agent, tool
+from strands.multiagent.a2a import A2AServer
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="Strands Agent Streaming API", version="0.1.0")
 
 REGION = os.getenv("AWS_REGION", "us-west-2")
 EMBED_MODEL_ID = os.getenv("EMBED_MODEL_ID", "amazon.titan-embed-text-v2:0")
@@ -72,51 +68,15 @@ def search_toddler_index(prompt: str, top_k: int = 3) -> str:
 
 
 agent_instance = Agent(
+                    description="幼児言葉を理解し推測する言葉を出力するエージェント",
                     tools=[search_toddler_index],
                     callback_handler=None,
                     system_prompt="あなたは入力された幼児言葉を理解し、<入力された幼児言葉：推測される言葉>だけを出力するエージェントです。search_toddler_indexツールを使用して幼児言葉に関する情報を検索して結果を出力してください。",
                     )
 
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+server = A2AServer(
+    agent=agent_instance, 
+    port=9001,
+)
 
-
-@app.post("/stream")
-async def stream_response(request: PromptRequest):
-    """Plain text streaming endpoint (newline delimited)."""
-
-    async def generate() -> AsyncGenerator[bytes, None]:
-        try:
-            async for event in agent_instance.stream_async(request.prompt):
-                chunk = event.get("data") if isinstance(event, dict) else None
-                if chunk:
-                    yield (chunk + "\n").encode("utf-8")
-        except Exception as e:
-            logger.exception("stream error")
-            yield f"Error: {type(e).__name__}: {e}\n".encode("utf-8")
-
-    return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
-
-
-@app.post("/stream_sse")
-async def stream_sse(request: PromptRequest):
-    """Server-Sent Events (SSE) style streaming endpoint."""
-
-    async def event_source() -> AsyncGenerator[bytes, None]:
-        try:
-            async for event in agent_instance.stream_async(request.prompt):
-                chunk = event.get("data") if isinstance(event, dict) else None
-                if chunk:
-                    yield f"data: {chunk}\n\n".encode("utf-8")
-            yield b"event: end\ndata: done\n\n"
-        except Exception as e:
-            logger.exception("sse stream error")
-            yield f"event: error\ndata: {type(e).__name__}: {e}\n\n".encode("utf-8")
-
-    return StreamingResponse(event_source(), media_type="text/event-stream")
-
-
-@app.get("/")
-async def root():
-    return {"message": "Use POST /stream or /stream_sse with {'prompt':'...'}"}
+server.serve()
