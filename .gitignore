@@ -1,8 +1,7 @@
+.env
 .venv
 venv
 __pycache__/
-
-.env
 
 # 善住のCLIエージェント関係
 init
