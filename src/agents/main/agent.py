@@ -1,18 +1,53 @@
 import asyncio
 import logging
 import os
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from strands import Agent
 from strands_tools.a2a_client import A2AClientToolProvider
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="Strands Agent Streaming API", version="0.1.0")
+
+security = HTTPBearer(auto_error=False)
+
+def require_bearer_token(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+):
+    # Authorization ヘッダなし or Bearer 以外
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = credentials.credentials
+
+    # 許可トークンは環境変数 API_TOKENS（カンマ区切り）で設定
+    allowed = os.getenv("API_TOKENS")
+    if not allowed:
+        logger.warning("No API_TOKENS configured; denying all requests.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server auth not configured",
+        )
+
+    if token != allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -21,6 +56,9 @@ class PromptRequest(BaseModel):
 def load_system_prompt():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     prompt_path = os.path.join(current_dir, "system_prompt.txt")
+    if not os.path.exists(prompt_path):
+        logger.warning(f"System prompt file not found: {prompt_path}")
+        return "You are a helpful assistant."
     with open(prompt_path, "r", encoding="utf-8") as f:
         return f.read()
 
@@ -39,7 +77,7 @@ async def health():
     return {"status": "ok"}
 
 @app.post("/stream")
-async def stream_response(request: PromptRequest):
+async def stream_response(request: PromptRequest, _: None = Depends(require_bearer_token)):
     """Plain text streaming endpoint (newline delimited)."""
 
     async def generate() -> AsyncGenerator[bytes, None]:
@@ -56,7 +94,7 @@ async def stream_response(request: PromptRequest):
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
 @app.post("/stream_sse")
-async def stream_sse(request: PromptRequest):
+async def stream_sse(request: PromptRequest, _: None = Depends(require_bearer_token)):
     """Server-Sent Events (SSE) style streaming endpoint."""
 
     async def event_source() -> AsyncGenerator[bytes, None]:
