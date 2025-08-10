@@ -18,7 +18,7 @@ venv環境にアクセス
 ```
 python3 -m venv .venv
 source .venv/bin/activate
-# プロンプトの最初に (venv) が追加される
+# プロンプトの最初に (.venv) が追加される
 ```
 
 ### インストール
@@ -40,7 +40,7 @@ aws configure
 ```
 uvicorn src.agents.base_sample.agent:app --reload --port 8000
 ```
-- Curlコマンドでリクエスト
+- Curlコマンドでリクエスト（別ターミナルから）
 ```
 curl -X POST http://localhost:8000/stream \
   -H 'Content-Type: application/json' \
