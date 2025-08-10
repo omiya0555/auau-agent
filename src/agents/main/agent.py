@@ -9,6 +9,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from strands import Agent
 from strands_tools.a2a_client import A2AClientToolProvider
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +34,7 @@ def require_bearer_token(
     token = credentials.credentials
 
     # 許可トークンは環境変数 API_TOKENS（カンマ区切り）で設定
-    allowed = [t.strip() for t in os.getenv("API_TOKENS", "").split(",") if t.strip()]
+    allowed = os.getenv("API_TOKENS")
     if not allowed:
         logger.warning("No API_TOKENS configured; denying all requests.")
         raise HTTPException(
@@ -39,7 +42,7 @@ def require_bearer_token(
             detail="Server auth not configured",
         )
 
-    if token not in allowed:
+    if token != allowed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid token",
