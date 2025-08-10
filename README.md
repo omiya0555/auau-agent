@@ -36,13 +36,17 @@ aws configure
 ※ 注意点：us-west-2 リージョンのBedrockから、claude4 のアクセスをリクエストしておく
 
 ### ローカル環境APIリクエストの検証
-- APIサーバーの起動
+- 各子エージェントサーバを起動
 ```
-uvicorn src.agents.base_sample.agent:app --reload --port 8000
+python src/agents/{各子エージェントディレクトリ}/agent.py
+```
+- mainのAPIサーバーの起動
+```
+uvicorn src.agents.main.agent:app --reload --port 8000
 ```
 - Curlコマンドでリクエスト（別ターミナルから）
 ```
 curl -X POST http://localhost:8000/stream \
   -H 'Content-Type: application/json' \
-  -d '{"prompt":"電気自動車の最近のトレンドを要約してください"}'
+  -d '{"prompt":"ぶーぶ"}'
 ```

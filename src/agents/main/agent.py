@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
@@ -7,7 +8,6 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from strands import Agent
 from strands_tools.a2a_client import A2AClientToolProvider
-#from strands_tools import calculator, http_request
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -17,14 +17,22 @@ app = FastAPI(title="Strands Agent Streaming API", version="0.1.0")
 class PromptRequest(BaseModel):
     prompt: str
 
+# Load system prompt from file
+def load_system_prompt():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompt_path = os.path.join(current_dir, "system_prompt.txt")
+    with open(prompt_path, "r", encoding="utf-8") as f:
+        return f.read()
+
 # Reuse a single Agent instance per process (tools are stateless)
 agent_urls = [
-    "http://localhost:9000",  # web_search Agent 
+    "http://localhost:9000",  # web_search Agent
+    "http://localhost:9001",  # toddler-rag Agent
 ]
 
 a2a_tool_provider = A2AClientToolProvider(known_agent_urls=agent_urls)
 
-agent_instance = Agent(tools=a2a_tool_provider.tools, callback_handler=None)
+agent_instance = Agent(tools=a2a_tool_provider.tools, callback_handler=None, system_prompt=load_system_prompt())
 
 @app.get("/health")
 async def health():
