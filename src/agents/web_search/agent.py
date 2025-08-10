@@ -1,9 +1,14 @@
 from strands import Agent
+from strands.multiagent.a2a import A2AServer
 from dotenv import load_dotenv
 from tools.web_search import web_search
 
 load_dotenv()
 
-agent = Agent(tools=[web_search])
-user_input = input('質問を入力：')
-agent(user_input)
+agent = Agent(tools=[web_search], description="web検索エージェント")
+server = A2AServer(
+    agent=agent, 
+    port=9000
+)
+
+server.serve()

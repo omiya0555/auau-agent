@@ -5,8 +5,12 @@ boto3==1.40.0
 botocore==1.40.0
 
 # --- Strands --------------------------------------------------
-strands-agents==1.4.0
-strands-agents-tools==0.2.3
+strands-agents[a2a]>=1.4.0
+strands-agents-tools[a2a]>=0.2.3
+a2a-sdk>=0.2.16
 
 # --- Web サーバ（AgentCore が内部で ASGI 起動） --------------
 uvicorn==0.34.2
+
+# --- fastAPI --------------
+fastapi==0.116.1
