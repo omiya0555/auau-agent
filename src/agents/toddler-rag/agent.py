@@ -23,6 +23,16 @@ s3vectors = boto3.client("s3vectors", region_name=REGION)
 class PromptRequest(BaseModel):
     prompt: str
 
+# Load system prompt from file
+def load_system_prompt():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompt_path = os.path.join(current_dir, "system_prompt.txt")
+    if not os.path.exists(prompt_path):
+        logger.warning(f"System prompt file not found: {prompt_path}")
+        return "You are a helpful assistant."
+    with open(prompt_path, "r", encoding="utf-8") as f:
+        return f.read()
+
 
 @tool
 def search_toddler_index(prompt: str, top_k: int = 3) -> str:
@@ -71,7 +81,7 @@ agent_instance = Agent(
                     description="幼児言葉を理解し推測する言葉を出力するエージェント",
                     tools=[search_toddler_index],
                     callback_handler=None,
-                    system_prompt="あなたは入力された幼児言葉を理解し、<入力された幼児言葉：推測される言葉>だけを出力するエージェントです。search_toddler_indexツールを使用して幼児言葉に関する情報を検索して結果を出力してください。",
+                    system_prompt=load_system_prompt(),
                     )
 
 server = A2AServer(
