@@ -11,6 +11,7 @@ a2a-sdk>=0.2.16
 
 # --- Web サーバ（AgentCore が内部で ASGI 起動） --------------
 uvicorn==0.34.2
+tavily-python==0.7.10
 
 # --- fastAPI --------------
 fastapi==0.116.1
