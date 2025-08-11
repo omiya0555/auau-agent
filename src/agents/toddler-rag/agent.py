@@ -6,15 +6,17 @@ import boto3
 from pydantic import BaseModel
 from strands import Agent, tool
 from strands.multiagent.a2a import A2AServer
+from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-
+load_dotenv()
+MODEL_ID = os.getenv("BEDROCK_MODEL_ID","")
 REGION = os.getenv("AWS_REGION", "us-west-2")
 EMBED_MODEL_ID = os.getenv("EMBED_MODEL_ID", "amazon.titan-embed-text-v2:0")
 VECTOR_BUCKET = os.getenv("VECTOR_BUCKET_NAME", "tollder-vector-bucket")
 VECTOR_INDEX = os.getenv("VECTOR_INDEX_NAME", "tollder-index")
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 s3vectors = boto3.client("s3vectors", region_name=REGION)
@@ -66,9 +68,9 @@ def search_toddler_index(prompt: str, top_k: int = 3) -> str:
         logger.exception("Vector search failed")
         return f"Vector search error: {type(e).__name__}: {e}"
 
-
 agent_instance = Agent(
                     description="幼児言葉を理解し推測する言葉を出力するエージェント",
+                    model=MODEL_ID,
                     tools=[search_toddler_index],
                     callback_handler=None,
                     system_prompt="あなたは入力された幼児言葉を理解し、<入力された幼児言葉：推測される言葉>だけを出力するエージェントです。search_toddler_indexツールを使用して幼児言葉に関する情報を検索して結果を出力してください。",

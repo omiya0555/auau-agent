@@ -11,6 +11,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 
 load_dotenv()
+MODEL_ID = os.getenv("BEDROCK_MODEL_ID","")
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -19,7 +21,7 @@ app = FastAPI(title="Strands Agent Streaming API", version="0.1.0")
 class PromptRequest(BaseModel):
     prompt: str
 
-agent_instance = Agent(tools=[], callback_handler=None)
+agent_instance = Agent(tools=[], callback_handler=None, model=MODEL_ID)
 
 # 認証設定追加
 security = HTTPBearer(auto_error=False)
