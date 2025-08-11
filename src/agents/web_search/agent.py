@@ -1,3 +1,4 @@
+import os
 from strands import Agent
 from strands.multiagent.a2a import A2AServer
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ import logging
 import os
 
 load_dotenv()
+MODEL_ID = os.getenv("BEDROCK_MODEL_ID","")
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
