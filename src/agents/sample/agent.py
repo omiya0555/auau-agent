@@ -21,7 +21,18 @@ app = FastAPI(title="Strands Agent Streaming API", version="0.1.0")
 class PromptRequest(BaseModel):
     prompt: str
 
-agent_instance = Agent(tools=[], callback_handler=None, model=MODEL_ID)
+    
+# Load system prompt from file
+def load_system_prompt():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompt_path = os.path.join(current_dir, "system_prompt.txt")
+    if not os.path.exists(prompt_path):
+        logger.warning(f"System prompt file not found: {prompt_path}")
+        return "You are a helpful assistant."
+    with open(prompt_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+agent_instance = Agent(tools=[], callback_handler=None, model=MODEL_ID, system_prompt=load_system_prompt())
 
 # 認証設定追加
 security = HTTPBearer(auto_error=False)
